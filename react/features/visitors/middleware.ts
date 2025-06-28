@@ -143,7 +143,7 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
     }
     case SUBSCRIBE_VISITORS_LIST: {
         if (!WebsocketClient.getInstance().isActive()) {
-            _subscribeVisitorsList(getState(), dispatch);
+            _subscribeVisitorsList(getState, dispatch);
         }
         break;
     }
@@ -326,9 +326,10 @@ function _subscribeQueueStats(stateful: IStateful, dispatch: IStore['dispatch'])
             toState(stateful)['features/base/jwt'].jwt);
 }
 
-function _subscribeVisitorsList(stateful: IStateful, dispatch: IStore['dispatch']) {
-    const { visitors: visitorsConfig } = toState(stateful)['features/base/config'];
-    const conference = toState(stateful)['features/base/conference'].conference;
+function _subscribeVisitorsList(getState: IStore['getState'], dispatch: IStore['dispatch']) {
+    const state = getState();
+    const { visitors: visitorsConfig } = state['features/base/config'];
+    const conference = state['features/base/conference'].conference;
     const meetingId = conference?.getMeetingUniqueId();
 
     if (!visitorsConfig?.queueService || !meetingId) {
@@ -340,7 +341,7 @@ function _subscribeVisitorsList(stateful: IStateful, dispatch: IStore['dispatch'
             `wss://${visitorsConfig.queueService}/visitors-list/websocket`,
             `/secured/conference/visitors-list/topic/${meetingId}`,
             updates => {
-                let visitors = [ ...(toState(stateful)['features/visitors'].visitors ?? []) ];
+                let visitors = [ ...(getState()['features/visitors'].visitors ?? []) ];
 
                 updates.forEach(u => {
                     if (u.s === 'j') {
@@ -358,7 +359,7 @@ function _subscribeVisitorsList(stateful: IStateful, dispatch: IStore['dispatch'
 
                 dispatch(updateVisitorsList(visitors));
             },
-            toState(stateful)['features/base/jwt'].jwt);
+            getState()['features/base/jwt'].jwt);
 }
 
 /**
