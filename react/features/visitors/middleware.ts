@@ -5,6 +5,7 @@ import { IStore } from '../app/types';
 import { IStateful } from '../base/app/types';
 import {
     CONFERENCE_JOINED,
+    CONFERENCE_WILL_LEAVE,
     ENDPOINT_MESSAGE_RECEIVED,
     UPDATE_CONFERENCE_METADATA
 } from '../base/conference/actionTypes';
@@ -35,7 +36,7 @@ import { INotificationProps } from '../notifications/types';
 import { open as openParticipantsPane } from '../participants-pane/actions';
 import { joinConference } from '../prejoin/actions';
 
-import { UPDATE_VISITORS_IN_QUEUE_COUNT } from './actionTypes';
+import { SUBSCRIBE_VISITORS_LIST, UPDATE_VISITORS_IN_QUEUE_COUNT } from './actionTypes';
 import {
     approveRequest,
     clearPromotionRequest,
@@ -45,7 +46,8 @@ import {
     setInVisitorsQueue,
     setVisitorDemoteActor,
     setVisitorsSupported,
-    updateVisitorsInQueueCount
+    updateVisitorsInQueueCount,
+    updateVisitorsList
 } from './actions';
 import { JoinMeetingDialog } from './components';
 import { getPromotionRequests, getVisitorsInQueueCount } from './functions';
@@ -133,6 +135,16 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
             dispatch(raiseHand(false));
         });
 
+        break;
+    }
+    case CONFERENCE_WILL_LEAVE: {
+        WebsocketClient.getInstance().disconnect();
+        break;
+    }
+    case SUBSCRIBE_VISITORS_LIST: {
+        if (!WebsocketClient.getInstance().isActive()) {
+            _subscribeVisitorsList(getState(), dispatch);
+        }
         break;
     }
     case ENDPOINT_MESSAGE_RECEIVED: {
@@ -310,6 +322,41 @@ function _subscribeQueueStats(stateful: IStateful, dispatch: IStore['dispatch'])
                 if ('visitorsWaiting' in msg) {
                     dispatch(updateVisitorsInQueueCount(msg.visitorsWaiting));
                 }
+            },
+            toState(stateful)['features/base/jwt'].jwt);
+}
+
+function _subscribeVisitorsList(stateful: IStateful, dispatch: IStore['dispatch']) {
+    const { visitors: visitorsConfig } = toState(stateful)['features/base/config'];
+    const conference = toState(stateful)['features/base/conference'].conference;
+    const meetingId = conference?.getMeetingUniqueId();
+
+    if (!visitorsConfig?.queueService || !meetingId) {
+        return;
+    }
+
+    WebsocketClient.getInstance()
+        .connectVisitorsList(
+            `wss://${visitorsConfig.queueService}/visitors-list/websocket`,
+            `/secured/conference/visitors-list/topic/${meetingId}`,
+            updates => {
+                let visitors = [ ...(toState(stateful)['features/visitors'].visitors ?? []) ];
+
+                updates.forEach(u => {
+                    if (u.s === 'j') {
+                        const index = visitors.findIndex(v => v.id === u.r);
+
+                        if (index === -1) {
+                            visitors.push({ id: u.r, name: u.n });
+                        } else {
+                            visitors[index] = { id: u.r, name: u.n };
+                        }
+                    } else if (u.s === 'l') {
+                        visitors = visitors.filter(v => v.id !== u.r);
+                    }
+                });
+
+                dispatch(updateVisitorsList(visitors));
             },
             toState(stateful)['features/base/jwt'].jwt);
 }

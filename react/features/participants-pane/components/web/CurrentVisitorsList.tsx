@@ -1,0 +1,136 @@
+/* eslint-disable react/no-multi-comp */
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
+import { FixedSizeList } from 'react-window';
+import { makeStyles } from 'tss-react/mui';
+
+import Icon from '../../../base/icons/components/Icon';
+import { IconArrowDown, IconArrowUp } from '../../../base/icons/svg';
+import { withPixelLineHeight } from '../../../base/styles/functions.web';
+import { normalizeAccents } from '../../../base/util/strings.web';
+import { subscribeVisitorsList } from '../../../visitors/actions';
+import { getVisitorsList, isVisitorsListSubscribed } from '../../../visitors/functions';
+import { ACTION_TRIGGER, MEDIA_STATE } from '../../constants';
+
+import ParticipantItem from './ParticipantItem';
+
+/**
+ * Props for the {@code CurrentVisitorsList} component.
+ */
+interface IProps {
+    searchString: string;
+}
+
+const useStyles = makeStyles()(theme => {
+    return {
+        container: {
+            marginTop: theme.spacing(3)
+        },
+        heading: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            ...withPixelLineHeight(theme.typography.bodyShortBold),
+            color: theme.palette.text02
+        },
+        arrowContainer: {
+            backgroundColor: theme.palette.ui03,
+            width: '24px',
+            height: '24px',
+            borderRadius: '6px',
+            marginLeft: theme.spacing(2),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'none'
+        }
+    };
+});
+
+/**
+ * Renders the visitors list inside the participants pane.
+ *
+ * @param {IProps} props - Component props.
+ * @returns {React$Element<any>} The component.
+ */
+export default function CurrentVisitorsList({ searchString }: IProps) {
+    const visitors = useSelector(getVisitorsList);
+    const { t } = useTranslation();
+    const { classes } = useStyles();
+    const dispatch = useDispatch();
+    const [ collapsed, setCollapsed ] = useState(true);
+    const isSubscribed = useSelector(isVisitorsListSubscribed);
+
+    const toggleCollapsed = useCallback(() => {
+        setCollapsed(c => {
+            const newCollapsed = !c;
+
+            if (!newCollapsed && !isSubscribed) {
+                dispatch(subscribeVisitorsList());
+            }
+
+            return newCollapsed;
+        });
+    }, [ dispatch, isSubscribed ]);
+
+    useEffect(() => {
+        if (searchString) {
+            setCollapsed(false);
+            if (!isSubscribed) {
+                dispatch(subscribeVisitorsList());
+            }
+        }
+    }, [ searchString, dispatch, isSubscribed ]);
+
+    if (!visitors.length) {
+        return null;
+    }
+
+    const filtered = visitors.filter(v =>
+        normalizeAccents(v.name).toLowerCase().includes(normalizeAccents(searchString).toLowerCase())
+    );
+
+    const itemSize = 40;
+    const height = Math.min(filtered.length * itemSize, 200);
+
+    const Row = ({ index, style }: { index: number; style: any; }) => {
+        const v = filtered[index];
+
+        return (
+            <div style = { style }>
+                <ParticipantItem
+                    actionsTrigger = { ACTION_TRIGGER.HOVER }
+                    audioMediaState = { MEDIA_STATE.NONE }
+                    displayName = { v.name }
+                    participantID = { v.id }
+                    videoMediaState = { MEDIA_STATE.NONE } />
+            </div>
+        );
+    };
+
+    return (
+        <div className = { classes.container }>
+            <div
+                className = { classes.heading }
+                onClick = { toggleCollapsed }>
+                <span>{ t('participantsPane.headings.visitors', { count: visitors.length }) }</span>
+                <span className = { classes.arrowContainer }>
+                    <Icon
+                        size = { 14 }
+                        src = { collapsed ? IconArrowDown : IconArrowUp } />
+                </span>
+            </div>
+            {!collapsed && (
+                <FixedSizeList
+                    height = { height }
+                    itemCount = { filtered.length }
+                    itemSize = { itemSize }
+                    width = '100%'>
+                    { Row }
+                </FixedSizeList>
+            )}
+        </div>
+    );
+}

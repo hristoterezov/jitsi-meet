@@ -69,6 +69,26 @@ export function isVisitorsSupported(stateful: IStateful) {
 }
 
 /**
+ * Returns the current visitor list.
+ *
+ * @param {IStateful} stateful - The redux store or {@code getState} function.
+ * @returns {Array<Object>}
+ */
+export function getVisitorsList(stateful: IStateful) {
+    return toState(stateful)['features/visitors'].visitors ?? [];
+}
+
+/**
+ * Whether the visitors list websocket subscription has been requested.
+ *
+ * @param {IStateful} stateful - The redux store or {@code getState} function.
+ * @returns {boolean}
+ */
+export function isVisitorsListSubscribed(stateful: IStateful) {
+    return toState(stateful)['features/visitors'].visitorsListSubscribed;
+}
+
+/**
  * Whether visitor mode is live.
  *
  * @param {Function|Object} stateful - The redux store or {@code getState}
