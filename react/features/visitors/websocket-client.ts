@@ -147,4 +147,66 @@ export class WebsocketClient {
     get connectCount(): number {
         return this._connectCount;
     }
+
+    /**
+     * Connects to the visitors list endpoint and keeps an up to date list.
+     *
+     * @param {string} queueServiceURL - The service URL to use.
+     * @param {string} endpoint - The endpoint to subscribe to.
+     * @param {Function} callback - Callback executed with updates for the visitors list.
+     * @param {string} token - The token to be used for authorization.
+     * @param {Function?} connectCallback - Callback executed when connected.
+     * @returns {void}
+     */
+    connectVisitorsList(queueServiceURL: string,
+            endpoint: string,
+            callback: (updates: Array<{ n: string; r: string; s: string; }>) => void,
+            token: string | undefined,
+            connectCallback?: () => void) {
+        this.stompClient = new Client({
+            brokerURL: queueServiceURL,
+            forceBinaryWSFrames: true,
+            appendMissingNULLonIncoming: true
+        });
+
+        const errorConnecting = (error: any) => {
+            logger.error(`Error connecting to ${queueServiceURL} ${JSON.stringify(error)}`);
+        };
+
+        this.stompClient.onWebSocketError = errorConnecting;
+
+        this.stompClient.onStompError = frame => {
+            errorConnecting(frame.headers.message);
+        };
+
+        if (token) {
+            this.stompClient.connectHeaders = {
+                Authorization: `Bearer ${token}`
+            };
+        }
+
+        this.stompClient.onConnect = () => {
+            if (!this.stompClient) {
+                return;
+            }
+
+            logger.info(`Connected to:${endpoint}`);
+            connectCallback?.();
+
+            this.stompClient.subscribe(endpoint, message => {
+                try {
+                    const updates: Array<{ n: string; r: string; s: string; }> = JSON.parse(message.body);
+
+                    callback(updates);
+
+                } catch (e) {
+                    logger.error(`Error parsing visitors response: ${message}`, e);
+                }
+            });
+        };
+
+        this.stompClient.activate();
+    }
+
+    // Reuse disconnect() and isActive() for visitors list management.
 }
