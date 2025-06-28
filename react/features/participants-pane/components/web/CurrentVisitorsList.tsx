@@ -97,7 +97,9 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
         normalizeAccents(v.name).toLowerCase().includes(normalizeAccents(searchString).toLowerCase())
     );
 
-    const itemSize = 40;
+    // ListItem height is 56px including padding so the item size
+    // for virtualization needs to match it exactly to avoid clipping.
+    const itemSize = 56;
     const height = Math.min(filtered.length * itemSize, 200);
 
     const Row = ({ index, style }: { index: number; style: any; }) => {
