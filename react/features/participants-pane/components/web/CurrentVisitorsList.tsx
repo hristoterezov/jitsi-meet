@@ -10,7 +10,11 @@ import { IconArrowDown, IconArrowUp } from '../../../base/icons/svg';
 import { withPixelLineHeight } from '../../../base/styles/functions.web';
 import { normalizeAccents } from '../../../base/util/strings.web';
 import { subscribeVisitorsList } from '../../../visitors/actions';
-import { getVisitorsList, isVisitorsListSubscribed } from '../../../visitors/functions';
+import {
+    getVisitorsCount,
+    getVisitorsList,
+    isVisitorsListSubscribed
+} from '../../../visitors/functions';
 import { ACTION_TRIGGER, MEDIA_STATE } from '../../constants';
 
 import ParticipantItem from './ParticipantItem';
@@ -56,6 +60,7 @@ const useStyles = makeStyles()(theme => {
  * @returns {React$Element<any>} The component.
  */
 export default function CurrentVisitorsList({ searchString }: IProps) {
+    const visitorsCount = useSelector(getVisitorsCount);
     const visitors = useSelector(getVisitorsList);
     const { t } = useTranslation();
     const { classes } = useStyles();
@@ -84,7 +89,7 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
         }
     }, [ searchString, dispatch, isSubscribed ]);
 
-    if (!visitors.length) {
+    if (!visitorsCount) {
         return null;
     }
 
@@ -115,7 +120,7 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
             <div
                 className = { classes.heading }
                 onClick = { toggleCollapsed }>
-                <span>{ t('participantsPane.headings.visitors', { count: visitors.length }) }</span>
+                <span>{ t('participantsPane.headings.visitors', { count: visitorsCount }) }</span>
                 <span className = { classes.arrowContainer }>
                     <Icon
                         size = { 14 }
