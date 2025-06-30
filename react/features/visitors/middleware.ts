@@ -50,7 +50,7 @@ import {
     updateVisitorsList
 } from './actions';
 import { JoinMeetingDialog } from './components';
-import { getPromotionRequests, getVisitorsInQueueCount } from './functions';
+import { getPromotionRequests, getVisitorsInQueueCount, isVisitorsListEnabled } from './functions';
 import logger from './logger';
 import { WebsocketClient } from './websocket-client';
 
@@ -142,7 +142,7 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
         break;
     }
     case SUBSCRIBE_VISITORS_LIST: {
-        if (!WebsocketClient.getInstance().isActive()) {
+        if (isVisitorsListEnabled(getState()) && !WebsocketClient.getInstance().isActive()) {
             _subscribeVisitorsList(getState, dispatch);
         }
         break;

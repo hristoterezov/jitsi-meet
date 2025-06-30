@@ -13,7 +13,8 @@ import { subscribeVisitorsList } from '../../../visitors/actions';
 import {
     getVisitorsCount,
     getVisitorsList,
-    isVisitorsListSubscribed
+    isVisitorsListEnabled,
+    isVisitorsListSubscribed,
 } from '../../../visitors/functions';
 import { ACTION_TRIGGER, MEDIA_STATE } from '../../constants';
 
@@ -62,6 +63,7 @@ const useStyles = makeStyles()(theme => {
 export default function CurrentVisitorsList({ searchString }: IProps) {
     const visitorsCount = useSelector(getVisitorsCount);
     const visitors = useSelector(getVisitorsList);
+    const featureEnabled = useSelector(isVisitorsListEnabled);
     const { t } = useTranslation();
     const { classes } = useStyles();
     const dispatch = useDispatch();
@@ -72,24 +74,24 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
         setCollapsed(c => {
             const newCollapsed = !c;
 
-            if (!newCollapsed && !isSubscribed) {
+            if (featureEnabled && !newCollapsed && !isSubscribed) {
                 dispatch(subscribeVisitorsList());
             }
 
             return newCollapsed;
         });
-    }, [ dispatch, isSubscribed ]);
+    }, [ dispatch, isSubscribed, featureEnabled ]);
 
     useEffect(() => {
-        if (searchString) {
+        if (featureEnabled && searchString) {
             setCollapsed(false);
             if (!isSubscribed) {
                 dispatch(subscribeVisitorsList());
             }
         }
-    }, [ searchString, dispatch, isSubscribed ]);
+    }, [ searchString, dispatch, isSubscribed, featureEnabled ]);
 
-    if (!visitorsCount) {
+    if (!featureEnabled || !visitorsCount) {
         return null;
     }
 

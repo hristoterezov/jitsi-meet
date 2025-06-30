@@ -1,5 +1,7 @@
 import { IReduxState } from '../app/types';
 import { IStateful } from '../base/app/types';
+import { MEET_FEATURES } from '../base/jwt/constants';
+import { isJwtFeatureEnabled } from '../base/jwt/functions';
 import { toState } from '../base/redux/functions';
 
 /**
@@ -108,4 +110,14 @@ export function isVisitorsLive(stateful: IStateful) {
  */
 export function showVisitorsQueue(stateful: IStateful) {
     return toState(stateful)['features/visitors'].inQueue;
+}
+
+/**
+ * Checks if the visitors list feature is enabled based on JWT.
+ *
+ * @param {IReduxState} state - The redux state.
+ * @returns {boolean} Whether the feature is allowed.
+ */
+export function isVisitorsListEnabled(state: IReduxState): boolean {
+    return isJwtFeatureEnabled(state, MEET_FEATURES.LIST_VISITORS, false);
 }

@@ -15,6 +15,7 @@ import { BUTTON_TYPES } from '../../../base/ui/constants.web';
 import { findAncestorByClass } from '../../../base/ui/functions.web';
 import { isAddBreakoutRoomButtonVisible } from '../../../breakout-rooms/functions';
 import MuteEveryoneDialog from '../../../video-menu/components/web/MuteEveryoneDialog';
+import { isVisitorsListEnabled } from '../../../visitors/functions';
 import { close } from '../../actions.web';
 import {
     getParticipantsPaneOpen,
@@ -130,6 +131,7 @@ const ParticipantsPane = () => {
     const paneOpen = useSelector(getParticipantsPaneOpen);
     const isBreakoutRoomsSupported = useSelector((state: IReduxState) => state['features/base/conference'])
         .conference?.getBreakoutRooms()?.isSupported();
+    const visitorsListEnabled = useSelector(isVisitorsListEnabled);
     const showAddRoomButton = useSelector(isAddBreakoutRoomButtonVisible);
     const showFooter = useSelector(isLocalParticipantModerator);
     const showMuteAllButton = useSelector(isMuteAllVisible);
@@ -194,7 +196,7 @@ const ParticipantsPane = () => {
                     setSearchString = { setSearchString } />
                 {isBreakoutRoomsSupported && <RoomList searchString = { searchString } />}
                 {showAddRoomButton && <AddBreakoutRoomButton />}
-                <CurrentVisitorsList searchString = { searchString } />
+                {visitorsListEnabled && <CurrentVisitorsList searchString = { searchString } />}
             </div>
             {showFooter && (
                 <div className = { classes.footer }>
