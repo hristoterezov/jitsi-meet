@@ -907,7 +907,7 @@
             "participantsList": "Meeting participants ({{count}})",
             "visitorInQueue": " (waiting {{count}})",
             "visitorRequests": " (requests {{count}})",
-            "visitors": "Viewers ({{count}})",
+            "visitors": "Viewers {{count}}",
             "waitingLobby": "Waiting in lobby ({{count}})"
         },
         "search": "Search participants",

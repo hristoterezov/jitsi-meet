@@ -14,8 +14,14 @@ import ClickableIcon from '../../../base/ui/components/web/ClickableIcon';
 import { BUTTON_TYPES } from '../../../base/ui/constants.web';
 import { findAncestorByClass } from '../../../base/ui/functions.web';
 import { isAddBreakoutRoomButtonVisible } from '../../../breakout-rooms/functions';
+import { getKnockingParticipants, getLobbyEnabled } from '../../../lobby/functions';
 import MuteEveryoneDialog from '../../../video-menu/components/web/MuteEveryoneDialog';
-import { isVisitorsListEnabled } from '../../../visitors/functions';
+import {
+    getVisitorsCount,
+    getVisitorsInQueueCount,
+    isVisitorsListEnabled,
+    isVisitorsLive
+} from '../../../visitors/functions';
 import { close } from '../../actions.web';
 import {
     getParticipantsPaneOpen,
@@ -143,6 +149,11 @@ const ParticipantsPane = () => {
     const isBreakoutRoomsSupported = useSelector((state: IReduxState) => state['features/base/conference'])
         .conference?.getBreakoutRooms()?.isSupported();
     const visitorsListEnabled = useSelector(isVisitorsListEnabled);
+    const visitorsCount = useSelector(getVisitorsCount);
+    const visitorsInQueueCount = useSelector(getVisitorsInQueueCount);
+    const isLive = useSelector(isVisitorsLive);
+    const lobbyEnabled = useSelector(getLobbyEnabled);
+    const lobbyParticipants = useSelector(getKnockingParticipants);
     const showAddRoomButton = useSelector(isAddBreakoutRoomButtonVisible);
     const showFooter = useSelector(isLocalParticipantModerator);
     const showMuteAllButton = useSelector(isMuteAllVisible);
@@ -183,7 +194,25 @@ const ParticipantsPane = () => {
         setContextOpen(open => !open);
     }, []);
 
-    const listsCount = 1 + (isBreakoutRoomsSupported ? 1 : 0) + (visitorsListEnabled ? 1 : 0);
+    const showVisitorsInQueue = visitorsInQueueCount > 0 && isLive === false;
+    const showVisitorsList = visitorsCount > 0 || showVisitorsInQueue;
+    const showLobby = lobbyEnabled && lobbyParticipants.length > 0;
+
+    let listsCount = 1; // MeetingParticipants
+
+    if (showVisitorsList) {
+        listsCount++;
+    }
+    if (showLobby) {
+        listsCount++;
+    }
+    if (isBreakoutRoomsSupported) {
+        listsCount++;
+    }
+    if (visitorsListEnabled && visitorsCount > 0) {
+        listsCount++;
+    }
+
     const listClass = listsCount > 1 ? classes.listSectionGrow : classes.listSection;
 
     if (!paneOpen) {
@@ -201,10 +230,16 @@ const ParticipantsPane = () => {
                     onClick = { onClosePane } />
             </div>
             <div className = { classes.container }>
-                <VisitorsList />
-                <br className = { classes.antiCollapse } />
-                <LobbyParticipants />
-                <br className = { classes.antiCollapse } />
+                {showVisitorsList && (
+                    <div className = { listClass }>
+                        <VisitorsList />
+                    </div>) }
+                {showVisitorsList && <br className = { classes.antiCollapse } />}
+                {showLobby && (
+                    <div className = { listClass }>
+                        <LobbyParticipants />
+                    </div>) }
+                {showLobby && <br className = { classes.antiCollapse } />}
                 <div className = { listClass }>
                     <MeetingParticipants
                         searchString = { searchString }
@@ -215,7 +250,7 @@ const ParticipantsPane = () => {
                         <RoomList searchString = { searchString } />
                     </div>) }
                 {showAddRoomButton && <AddBreakoutRoomButton />}
-                {visitorsListEnabled && (
+                {visitorsListEnabled && visitorsCount > 0 && (
                     <div className = { listClass }>
                         <CurrentVisitorsList searchString = { searchString } />
                     </div>) }

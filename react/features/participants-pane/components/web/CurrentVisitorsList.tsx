@@ -125,7 +125,10 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
             <div
                 className = { classes.heading }
                 onClick = { toggleCollapsed }>
-                <span>{ t('participantsPane.headings.visitors', { count: visitorsCount }) }</span>
+                <span>{
+                    t('participantsPane.headings.visitors', { count: visitorsCount })
+                        .replace(String(visitorsCount), `(${visitorsCount})`)
+                }</span>
                 <span className = { classes.arrowContainer }>
                     <Icon
                         size = { 14 }
