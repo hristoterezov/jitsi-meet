@@ -9,8 +9,8 @@ import {
     getPromotionRequests,
     getVisitorsCount,
     getVisitorsInQueueCount,
-    isVisitorsListEnabled,
-    isVisitorsLive
+    isVisitorsLive,
+    shouldDisplayCurrentVisitorsList
 } from '../../../visitors/functions';
 
 import { VisitorsItem } from './VisitorsItem';
@@ -74,7 +74,7 @@ export default function VisitorsList() {
     const visitorsCount = useSelector(getVisitorsCount);
     const visitorsInQueueCount = useSelector(getVisitorsInQueueCount);
     const isLive = useSelector(isVisitorsLive);
-    const featureEnabled = useSelector(isVisitorsListEnabled);
+    const showCurrentVisitorsList = useSelector(shouldDisplayCurrentVisitorsList);
     const showVisitorsInQueue = visitorsInQueueCount > 0 && isLive === false;
 
     const { t } = useTranslation();
@@ -96,7 +96,7 @@ export default function VisitorsList() {
     return (
         <>
             <div className = { classes.headingContainer }>
-                {!(featureEnabled && visitorsCount > 0) && (
+                {!showCurrentVisitorsList && (
                     <div
                         className = { cx(classes.heading, classes.headingW) }
                         id = 'visitor-list-header' >

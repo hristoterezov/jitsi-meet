@@ -121,3 +121,15 @@ export function showVisitorsQueue(stateful: IStateful) {
 export function isVisitorsListEnabled(state: IReduxState): boolean {
     return isJwtFeatureEnabled(state, MEET_FEATURES.LIST_VISITORS, false);
 }
+
+/**
+ * Determines whether the current visitors list should be displayed.
+ *
+ * @param {IStateful} stateful - The redux store or {@code getState} function.
+ * @returns {boolean} Whether the visitors list should be shown.
+ */
+export function shouldDisplayCurrentVisitorsList(stateful: IStateful): boolean {
+    const state = toState(stateful);
+
+    return isVisitorsListEnabled(state) && getVisitorsCount(state) > 0;
+}

@@ -15,6 +15,7 @@ import {
     getVisitorsList,
     isVisitorsListEnabled,
     isVisitorsListSubscribed,
+    shouldDisplayCurrentVisitorsList
 } from '../../../visitors/functions';
 import { ACTION_TRIGGER, MEDIA_STATE } from '../../constants';
 
@@ -65,6 +66,7 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
     const visitorsCount = useSelector(getVisitorsCount);
     const visitors = useSelector(getVisitorsList);
     const featureEnabled = useSelector(isVisitorsListEnabled);
+    const shouldDisplayList = useSelector(shouldDisplayCurrentVisitorsList);
     const { t } = useTranslation();
     const { classes } = useStyles();
     const dispatch = useDispatch();
@@ -92,7 +94,7 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
         }
     }, [ searchString, dispatch, isSubscribed, featureEnabled ]);
 
-    if (!featureEnabled || !visitorsCount) {
+    if (!shouldDisplayList) {
         return null;
     }
 

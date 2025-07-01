@@ -19,8 +19,8 @@ import MuteEveryoneDialog from '../../../video-menu/components/web/MuteEveryoneD
 import {
     getVisitorsCount,
     getVisitorsInQueueCount,
-    isVisitorsListEnabled,
-    isVisitorsLive
+    isVisitorsLive,
+    shouldDisplayCurrentVisitorsList
 } from '../../../visitors/functions';
 import { close } from '../../actions.web';
 import {
@@ -148,10 +148,10 @@ const ParticipantsPane = () => {
     const paneOpen = useSelector(getParticipantsPaneOpen);
     const isBreakoutRoomsSupported = useSelector((state: IReduxState) => state['features/base/conference'])
         .conference?.getBreakoutRooms()?.isSupported();
-    const visitorsListEnabled = useSelector(isVisitorsListEnabled);
     const visitorsCount = useSelector(getVisitorsCount);
     const visitorsInQueueCount = useSelector(getVisitorsInQueueCount);
     const isLive = useSelector(isVisitorsLive);
+    const showCurrentVisitorsList = useSelector(shouldDisplayCurrentVisitorsList);
     const lobbyEnabled = useSelector(getLobbyEnabled);
     const lobbyParticipants = useSelector(getKnockingParticipants);
     const showAddRoomButton = useSelector(isAddBreakoutRoomButtonVisible);
@@ -209,7 +209,7 @@ const ParticipantsPane = () => {
     if (isBreakoutRoomsSupported) {
         listsCount++;
     }
-    if (visitorsListEnabled && visitorsCount > 0) {
+    if (showCurrentVisitorsList) {
         listsCount++;
     }
 
@@ -250,7 +250,7 @@ const ParticipantsPane = () => {
                         <RoomList searchString = { searchString } />
                     </div>) }
                 {showAddRoomButton && <AddBreakoutRoomButton />}
-                {visitorsListEnabled && visitorsCount > 0 && (
+                {showCurrentVisitorsList && (
                     <div className = { listClass }>
                         <CurrentVisitorsList searchString = { searchString } />
                     </div>) }
