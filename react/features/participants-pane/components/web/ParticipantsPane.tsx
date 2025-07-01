@@ -72,13 +72,24 @@ const useStyles = makeStyles<IStylesProps>()((theme, { isChatOpen }) => {
         container: {
             boxSizing: 'border-box',
             flex: 1,
-            overflowY: 'auto',
+            overflow: 'hidden',
             position: 'relative',
             padding: `0 ${participantsPaneTheme.panePadding}px`,
+            display: 'flex',
+            flexDirection: 'column',
 
             '&::-webkit-scrollbar': {
                 display: 'none'
             }
+        },
+
+        listSection: {
+            overflowY: 'auto'
+        },
+
+        listSectionGrow: {
+            overflowY: 'auto',
+            flex: 1
         },
 
         closeButton: {
@@ -172,6 +183,9 @@ const ParticipantsPane = () => {
         setContextOpen(open => !open);
     }, []);
 
+    const listsCount = 1 + (isBreakoutRoomsSupported ? 1 : 0) + (visitorsListEnabled ? 1 : 0);
+    const listClass = listsCount > 1 ? classes.listSectionGrow : classes.listSection;
+
     if (!paneOpen) {
         return null;
     }
@@ -191,12 +205,20 @@ const ParticipantsPane = () => {
                 <br className = { classes.antiCollapse } />
                 <LobbyParticipants />
                 <br className = { classes.antiCollapse } />
-                <MeetingParticipants
-                    searchString = { searchString }
-                    setSearchString = { setSearchString } />
-                {isBreakoutRoomsSupported && <RoomList searchString = { searchString } />}
+                <div className = { listClass }>
+                    <MeetingParticipants
+                        searchString = { searchString }
+                        setSearchString = { setSearchString } />
+                </div>
+                {isBreakoutRoomsSupported && (
+                    <div className = { listClass }>
+                        <RoomList searchString = { searchString } />
+                    </div>) }
                 {showAddRoomButton && <AddBreakoutRoomButton />}
-                {visitorsListEnabled && <CurrentVisitorsList searchString = { searchString } />}
+                {visitorsListEnabled && (
+                    <div className = { listClass }>
+                        <CurrentVisitorsList searchString = { searchString } />
+                    </div>) }
             </div>
             {showFooter && (
                 <div className = { classes.footer }>

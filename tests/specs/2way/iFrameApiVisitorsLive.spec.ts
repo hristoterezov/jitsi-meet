@@ -72,6 +72,6 @@ describe('Visitors', () => {
         });
 
         expect((await p1Visitors.getVisitorsCount()).trim()).toBe('1');
-        expect((await p1Visitors.getVisitorsHeaderFromParticipantsPane()).trim()).toBe('Viewers 1');
+        expect((await p1Visitors.getVisitorsHeaderFromParticipantsPane()).trim()).toBe('Viewers (1)');
     });
 });

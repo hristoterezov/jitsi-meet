@@ -87,7 +87,7 @@ export default function VisitorsList() {
         dispatch(goLive());
     }, [ dispatch ]);
 
-    if (visitorsCount <= 0 && !showVisitorsInQueue) {
+    if (!showVisitorsInQueue && requests.length === 0) {
         return null;
     }
 

@@ -37,6 +37,7 @@ const useStyles = makeStyles()(theme => {
             alignItems: 'center',
             justifyContent: 'space-between',
             cursor: 'pointer',
+            padding: `${theme.spacing(1)} 0`,
             ...withPixelLineHeight(theme.typography.bodyShortBold),
             color: theme.palette.text02
         },
