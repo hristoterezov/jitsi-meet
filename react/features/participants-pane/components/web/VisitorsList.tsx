@@ -9,8 +9,7 @@ import {
     getPromotionRequests,
     getVisitorsCount,
     getVisitorsInQueueCount,
-    isVisitorsLive,
-    shouldDisplayCurrentVisitorsList
+    isVisitorsLive
 } from '../../../visitors/functions';
 
 import { VisitorsItem } from './VisitorsItem';
@@ -74,7 +73,6 @@ export default function VisitorsList() {
     const visitorsCount = useSelector(getVisitorsCount);
     const visitorsInQueueCount = useSelector(getVisitorsInQueueCount);
     const isLive = useSelector(isVisitorsLive);
-    const showCurrentVisitorsList = useSelector(shouldDisplayCurrentVisitorsList);
     const showVisitorsInQueue = visitorsInQueueCount > 0 && isLive === false;
 
     const { t } = useTranslation();
@@ -96,16 +94,15 @@ export default function VisitorsList() {
     return (
         <>
             <div className = { classes.headingContainer }>
-                {!showCurrentVisitorsList && (
-                    <div
-                        className = { cx(classes.heading, classes.headingW) }
-                        id = 'visitor-list-header' >
-                        { t('participantsPane.headings.visitors', { count: visitorsCount })}
-                        { requests.length > 0
-                            && t('participantsPane.headings.visitorRequests', { count: requests.length }) }
-                        { showVisitorsInQueue
-                            && t('participantsPane.headings.visitorInQueue', { count: visitorsInQueueCount }) }
-                    </div>) }
+                <div
+                    className = { cx(classes.heading, classes.headingW) }
+                    id = 'visitor-list-header' >
+                    { t('participantsPane.headings.visitors', { count: visitorsCount })}
+                    { requests.length > 0
+                        && t('participantsPane.headings.visitorRequests', { count: requests.length }) }
+                    { showVisitorsInQueue
+                        && t('participantsPane.headings.visitorInQueue', { count: visitorsInQueueCount }) }
+                </div>
                 {
                     requests.length > 1 && !showVisitorsInQueue // Go live button is with higher priority
                     && <div
