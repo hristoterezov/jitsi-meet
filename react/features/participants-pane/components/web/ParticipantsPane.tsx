@@ -14,7 +14,14 @@ import ClickableIcon from '../../../base/ui/components/web/ClickableIcon';
 import { BUTTON_TYPES } from '../../../base/ui/constants.web';
 import { findAncestorByClass } from '../../../base/ui/functions.web';
 import { isAddBreakoutRoomButtonVisible } from '../../../breakout-rooms/functions';
+import { getKnockingParticipants, getLobbyEnabled } from '../../../lobby/functions';
 import MuteEveryoneDialog from '../../../video-menu/components/web/MuteEveryoneDialog';
+import {
+    getVisitorsCount,
+    getVisitorsInQueueCount,
+    isVisitorsLive,
+    shouldDisplayCurrentVisitorsList
+} from '../../../visitors/functions';
 import { close } from '../../actions.web';
 import {
     getParticipantsPaneOpen,
@@ -24,6 +31,7 @@ import {
 import { AddBreakoutRoomButton } from '../breakout-rooms/components/web/AddBreakoutRoomButton';
 import { RoomList } from '../breakout-rooms/components/web/RoomList';
 
+import CurrentVisitorsList from './CurrentVisitorsList';
 import { FooterContextMenu } from './FooterContextMenu';
 import LobbyParticipants from './LobbyParticipants';
 import MeetingParticipants from './MeetingParticipants';
@@ -70,13 +78,24 @@ const useStyles = makeStyles<IStylesProps>()((theme, { isChatOpen }) => {
         container: {
             boxSizing: 'border-box',
             flex: 1,
-            overflowY: 'auto',
+            overflow: 'hidden',
             position: 'relative',
             padding: `0 ${participantsPaneTheme.panePadding}px`,
+            display: 'flex',
+            flexDirection: 'column',
 
             '&::-webkit-scrollbar': {
                 display: 'none'
             }
+        },
+
+        listSection: {
+            overflowY: 'auto'
+        },
+
+        listSectionGrow: {
+            overflowY: 'auto',
+            flex: 1
         },
 
         closeButton: {
@@ -129,6 +148,12 @@ const ParticipantsPane = () => {
     const paneOpen = useSelector(getParticipantsPaneOpen);
     const isBreakoutRoomsSupported = useSelector((state: IReduxState) => state['features/base/conference'])
         .conference?.getBreakoutRooms()?.isSupported();
+    const visitorsCount = useSelector(getVisitorsCount);
+    const visitorsInQueueCount = useSelector(getVisitorsInQueueCount);
+    const isLive = useSelector(isVisitorsLive);
+    const showCurrentVisitorsList = useSelector(shouldDisplayCurrentVisitorsList);
+    const lobbyEnabled = useSelector(getLobbyEnabled);
+    const lobbyParticipants = useSelector(getKnockingParticipants);
     const showAddRoomButton = useSelector(isAddBreakoutRoomButtonVisible);
     const showFooter = useSelector(isLocalParticipantModerator);
     const showMuteAllButton = useSelector(isMuteAllVisible);
@@ -169,6 +194,27 @@ const ParticipantsPane = () => {
         setContextOpen(open => !open);
     }, []);
 
+    const showVisitorsInQueue = visitorsInQueueCount > 0 && isLive === false;
+    const showVisitorsList = visitorsCount > 0 || showVisitorsInQueue;
+    const showLobby = lobbyEnabled && lobbyParticipants.length > 0;
+
+    let listsCount = 1; // MeetingParticipants
+
+    if (showVisitorsList) {
+        listsCount++;
+    }
+    if (showLobby) {
+        listsCount++;
+    }
+    if (isBreakoutRoomsSupported) {
+        listsCount++;
+    }
+    if (showCurrentVisitorsList) {
+        listsCount++;
+    }
+
+    const listClass = listsCount > 1 ? classes.listSectionGrow : classes.listSection;
+
     if (!paneOpen) {
         return null;
     }
@@ -184,15 +230,30 @@ const ParticipantsPane = () => {
                     onClick = { onClosePane } />
             </div>
             <div className = { classes.container }>
-                <VisitorsList />
-                <br className = { classes.antiCollapse } />
-                <LobbyParticipants />
-                <br className = { classes.antiCollapse } />
-                <MeetingParticipants
-                    searchString = { searchString }
-                    setSearchString = { setSearchString } />
-                {isBreakoutRoomsSupported && <RoomList searchString = { searchString } />}
+                {showVisitorsList && (
+                    <div className = { listClass }>
+                        <VisitorsList />
+                    </div>) }
+                {showVisitorsList && <br className = { classes.antiCollapse } />}
+                {showLobby && (
+                    <div className = { listClass }>
+                        <LobbyParticipants />
+                    </div>) }
+                {showLobby && <br className = { classes.antiCollapse } />}
+                <div className = { listClass }>
+                    <MeetingParticipants
+                        searchString = { searchString }
+                        setSearchString = { setSearchString } />
+                </div>
+                {isBreakoutRoomsSupported && (
+                    <div className = { listClass }>
+                        <RoomList searchString = { searchString } />
+                    </div>) }
                 {showAddRoomButton && <AddBreakoutRoomButton />}
+                {showCurrentVisitorsList && (
+                    <div className = { listClass }>
+                        <CurrentVisitorsList searchString = { searchString } />
+                    </div>) }
             </div>
             {showFooter && (
                 <div className = { classes.footer }>
