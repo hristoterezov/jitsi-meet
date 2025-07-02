@@ -50,7 +50,11 @@ const useStyles = makeStyles()(theme => {
         headingContainer: {
             alignItems: 'center',
             display: 'flex',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            position: 'sticky',
+            top: 0,
+            backgroundColor: theme.palette.ui01,
+            zIndex: 1
         },
         heading: {
             ...withPixelLineHeight(theme.typography.bodyShortBold),

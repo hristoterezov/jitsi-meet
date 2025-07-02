@@ -33,6 +33,10 @@ const useStyles = makeStyles()(theme => {
             color: theme.palette.text02,
             ...withPixelLineHeight(theme.typography.bodyShortBold),
             marginBottom: theme.spacing(3),
+            position: 'sticky',
+            top: 0,
+            backgroundColor: theme.palette.ui01,
+            zIndex: 1,
 
             [`@media(max-width: ${participantsPaneTheme.MD_BREAKPOINT})`]: {
                 ...withPixelLineHeight(theme.typography.bodyShortBoldLarge)

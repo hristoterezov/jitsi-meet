@@ -40,7 +40,11 @@ const useStyles = makeStyles()(theme => {
             cursor: 'pointer',
             padding: `${theme.spacing(1)} 0`,
             ...withPixelLineHeight(theme.typography.bodyShortBold),
-            color: theme.palette.text02
+            color: theme.palette.text02,
+            position: 'sticky',
+            top: 0,
+            backgroundColor: theme.palette.ui01,
+            zIndex: 1
         },
         arrowContainer: {
             backgroundColor: theme.palette.ui03,
