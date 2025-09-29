@@ -1686,6 +1686,7 @@
         "screenTitle": "Whiteboard"
     },
     "testautoTranslationSection": {
-        "testNewKey": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! "
+        "testNewKey": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
+        "testNewKey2": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! "
     }
 }
