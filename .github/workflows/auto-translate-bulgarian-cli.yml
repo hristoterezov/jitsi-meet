@@ -2,7 +2,7 @@ name: Auto-translate Bulgarian (CLI)
 
 on:
   push:
-    branches: [master, auto-translate-bulgarian-automation]
+    branches: [master]
     paths:
       - 'lang/main.json'
 
