@@ -1,0 +1,186 @@
+name: Auto-translate Bulgarian (Optimized)
+
+on:
+  push:
+    branches: [master, auto-translate-bulgarian-automation]
+    paths:
+      - 'lang/main.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Extract changed keys
+        id: extract
+        run: |
+          node .github/scripts/extract-changed-keys.js > changed-keys.json
+          if [ ! -s changed-keys.json ]; then
+            echo "No changes to translate"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if there are keys to translate
+          ADDED_COUNT=$(node -e "console.log(Object.keys(JSON.parse(require('fs').readFileSync('changed-keys.json', 'utf-8')).added).length)")
+          REMOVED_COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('changed-keys.json', 'utf-8')).removed.length)")
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "needs_translation=$( [ "$ADDED_COUNT" -gt 0 ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
+
+          echo "Changes detected:"
+          echo "  - Keys to translate: $ADDED_COUNT"
+          echo "  - Keys to remove: $REMOVED_COUNT"
+          cat changed-keys.json
+
+      - name: Translate with Claude
+        if: steps.extract.outputs.needs_translation == 'true'
+        run: |
+          # Extract only the "added" keys that need translation
+          KEYS_TO_TRANSLATE=$(node -e "
+          const data = JSON.parse(require('fs').readFileSync('changed-keys.json', 'utf-8'));
+          console.log(JSON.stringify(data.added, null, 2));
+          ")
+
+          echo "Keys to translate:"
+          echo "$KEYS_TO_TRANSLATE"
+
+          claude -p "You are a professional translator specializing in Bulgarian translations for software interfaces.
+
+          I have some English strings from a video conferencing application (Jitsi Meet) that need to be translated to Bulgarian.
+
+          IMPORTANT: First, read the file lang/main-bg.json to understand the existing Bulgarian translation style, terminology, and consistency patterns.
+
+          Here are the English strings to translate (JSON format):
+          $KEYS_TO_TRANSLATE
+
+          TRANSLATION GUIDELINES:
+          - Use professional, natural Bulgarian language
+          - Be consistent with the existing Bulgarian translations in lang/main-bg.json (terminology, formal/informal style, etc.)
+          - Mixed Bulgarian and English is unacceptable. Everything must be translated to proper Bulgarian.
+          - Exception: Established technical terms that are widely used in English (like 'WebAssembly', 'URL', 'API') can remain in English if they don't have good Bulgarian translations and are commonly used by Bulgarian speakers.
+          - Example: 'phone number' MUST be translated to Bulgarian, but 'WebAssembly' can stay in English.
+          - Preserve any placeholders like {{variable}} or {name} exactly as they appear.
+          - Maintain formal/informal consistency with existing translations.
+
+          Please respond with ONLY a JSON object mapping each key to its Bulgarian translation. No explanations, no markdown, just the JSON object.
+          " --output-format stream-json > claude-output.txt 2>&1
+
+          # Extract JSON from Claude's response
+          cat claude-output.txt
+
+          # Try to extract the JSON object from the output
+          node -e "
+          const fs = require('fs');
+          const output = fs.readFileSync('claude-output.txt', 'utf-8');
+
+          // Try to find JSON object in the output
+          const jsonMatch = output.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            console.error('Could not find JSON in Claude output');
+            process.exit(1);
+          }
+
+          const translations = JSON.parse(jsonMatch[0]);
+          fs.writeFileSync('translations.json', JSON.stringify(translations, null, 2));
+          " || (echo "Failed to extract translations from Claude output" && exit 1)
+
+          echo "Extracted translations:"
+          cat translations.json
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Merge translations and remove deleted keys
+        if: steps.extract.outputs.has_changes == 'true'
+        run: |
+          # Prepare data for merge script (translations + removed keys)
+          node -e "
+          const fs = require('fs');
+          const changedKeys = JSON.parse(fs.readFileSync('changed-keys.json', 'utf-8'));
+
+          let translations = {};
+          if (fs.existsSync('translations.json')) {
+            translations = JSON.parse(fs.readFileSync('translations.json', 'utf-8'));
+          }
+
+          const data = {
+            translations: translations,
+            removed: changedKeys.removed
+          };
+
+          console.log(JSON.stringify(data, null, 2));
+          " | node .github/scripts/merge-translations.js
+
+      - name: Check for translation changes
+        id: check_changes
+        run: |
+          if git diff --quiet lang/main-bg.json; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          BRANCH_NAME="auto-translate-bulgarian-$(date +%Y%m%d-%H%M%S)"
+
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          git checkout -b "$BRANCH_NAME"
+          git add lang/main-bg.json
+
+          # Count changes for commit message
+          ADDED=$(git diff --cached lang/main-bg.json | grep -c '^+[^+]' || echo "0")
+          REMOVED=$(git diff --cached lang/main-bg.json | grep -c '^-[^-]' || echo "0")
+
+          git commit -m "$(cat <<EOF
+          feat(i18n): Auto-update Bulgarian translations
+
+          Automated Bulgarian translation update based on changes to main.json.
+          - Added/Updated: $ADDED key(s)
+          - Removed: $REMOVED key(s)
+
+          This PR was generated automatically by the auto-translate workflow.
+          EOF
+          )"
+
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --title "feat(i18n): Auto-update Bulgarian translations" \
+            --body "$(cat <<'EOF'
+          ## Summary
+          - Automated Bulgarian translation update based on changes to main.json
+          - Translations generated using Claude AI for consistency and quality
+
+          ## Test plan
+          - [ ] Review translation quality and accuracy
+          - [ ] Verify proper JSON formatting and indentation
+          - [ ] Check that all new/modified keys from main.json are translated
+          - [ ] Ensure consistency with existing Bulgarian translations
+          EOF
+          )" \
+            --base master \
+            --head "$BRANCH_NAME"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
