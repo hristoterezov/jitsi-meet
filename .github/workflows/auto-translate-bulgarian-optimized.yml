@@ -92,11 +92,13 @@ jobs:
           # Try to extract the JSON object from the output
           node -e "
           const fs = require('fs');
-          const output = fs.readFileSync('claude-output.txt', 'utf-8');
+          let output = fs.readFileSync('claude-output.txt', 'utf-8');
 
-          // Try to find JSON object in the output (find the largest/outermost JSON object)
-          // Look for patterns like {...} even across multiple lines
-          let jsonMatch = output.match(/\{(?:[^{}]|\{[^{}]*\})*\}/s);
+          // Remove markdown code blocks if present (```json ... ``` or \`\`\` ... \`\`\`)
+          output = output.replace(/\`\`\`(?:json)?\s*\n?/g, '');
+
+          // Try to find JSON object - match outermost braces with everything inside
+          const jsonMatch = output.match(/\{[\s\S]*\}/);
 
           if (!jsonMatch) {
             console.error('Could not find JSON in Claude output');
@@ -110,7 +112,7 @@ jobs:
             console.error('Successfully extracted and parsed JSON');
           } catch (error) {
             console.error('Failed to parse JSON:', error.message);
-            console.error('Matched text was:', jsonMatch[0]);
+            console.error('Matched text was:', jsonMatch[0].substring(0, 200) + '...');
             process.exit(1);
           }
           " || (echo "Failed to extract translations from Claude output" && exit 1)
