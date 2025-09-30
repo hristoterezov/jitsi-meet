@@ -1689,6 +1689,7 @@
         "testNewKey1": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
         "testNewKey2": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! This conference is awesome because it uses SIP!",
         "testNewKey3": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
-        "testNewKey4": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! "
+        "testNewKey4": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
+        "testNewKey5": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! "
     }
 }
