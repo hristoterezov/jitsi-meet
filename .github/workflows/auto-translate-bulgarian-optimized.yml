@@ -82,28 +82,40 @@ jobs:
           - Maintain formal/informal consistency with existing translations.
 
           Please respond with ONLY a JSON object mapping each key to its Bulgarian translation. No explanations, no markdown, just the JSON object.
-          " --output-format stream-json > claude-output.txt 2>&1
+          " > claude-output.txt 2>&1
 
-          # Extract JSON from Claude's response
+          # Show Claude's output for debugging
+          echo "=== Claude Output ==="
           cat claude-output.txt
+          echo "=== End Claude Output ==="
 
           # Try to extract the JSON object from the output
           node -e "
           const fs = require('fs');
           const output = fs.readFileSync('claude-output.txt', 'utf-8');
 
-          // Try to find JSON object in the output
-          const jsonMatch = output.match(/\{[\s\S]*\}/);
+          // Try to find JSON object in the output (find the largest/outermost JSON object)
+          // Look for patterns like {...} even across multiple lines
+          let jsonMatch = output.match(/\{(?:[^{}]|\{[^{}]*\})*\}/s);
+
           if (!jsonMatch) {
             console.error('Could not find JSON in Claude output');
+            console.error('Output was:', output);
             process.exit(1);
           }
 
-          const translations = JSON.parse(jsonMatch[0]);
-          fs.writeFileSync('translations.json', JSON.stringify(translations, null, 2));
+          try {
+            const translations = JSON.parse(jsonMatch[0]);
+            fs.writeFileSync('translations.json', JSON.stringify(translations, null, 2));
+            console.error('Successfully extracted and parsed JSON');
+          } catch (error) {
+            console.error('Failed to parse JSON:', error.message);
+            console.error('Matched text was:', jsonMatch[0]);
+            process.exit(1);
+          }
           " || (echo "Failed to extract translations from Claude output" && exit 1)
 
-          echo "Extracted translations:"
+          echo "=== Extracted translations ==="
           cat translations.json
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
