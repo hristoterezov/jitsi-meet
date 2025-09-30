@@ -1684,5 +1684,14 @@
             "heading": "Whiteboard"
         },
         "screenTitle": "Whiteboard"
+    },
+    "testautoTranslationSection": {
+        "testNewKey1": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
+        "testNewKey2": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! This conference is awesome because it uses SIP!",
+        "testNewKey3": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
+        "testNewKey4": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
+        "testNewKey5": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today! ",
+        "testNewKey7": "Secure,<br /> fully featured, and completely free video conferencing. Start using {{appName}} today!",
+        "testNewKey8": "The bridge channel is down and thus video quality may be limited to its lowest setting."
     }
 }
