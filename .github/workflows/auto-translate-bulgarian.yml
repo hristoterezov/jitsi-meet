@@ -1,0 +1,27 @@
+name: Auto-translate Bulgarian
+
+on:
+  push:
+    branches: [master, gh-action-auto-translate]
+    paths:
+      - 'lang/main.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Test Claude API key
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "Say hello in Bulgarian. Just respond with the greeting, nothing else."

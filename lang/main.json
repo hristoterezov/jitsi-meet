@@ -1684,5 +1684,8 @@
             "heading": "Whiteboard"
         },
         "screenTitle": "Whiteboard"
+    },
+    "workflowTest": {
+        "apiKeyTest": "This is a test key to verify the API key works"
     }
 }
