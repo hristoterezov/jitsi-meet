@@ -1,0 +1,104 @@
+name: Auto-translate Bulgarian
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Translate Bulgarian updates
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are a professional translator specializing in Bulgarian translations for software interfaces.
+
+            TASK: Update the Bulgarian translation file based on changes to the English translation file.
+
+            STEPS:
+            1. Read the file lang/main.json (English translations).
+            2. Read the file lang/main-bg.json (Bulgarian translations).
+            3. Compare the two files and identify keys that are in main.json but missing or different in main-bg.json.
+            4. Translate those keys professionally to Bulgarian.
+            5. Update lang/main-bg.json with the new translations, maintaining alphabetical key order.
+
+            TRANSLATION GUIDELINES:
+            - Do not modify existing Bulgarian translations. Only add new keys or update keys whose English source has changed.
+            - Think carefully and translate well. This is a very important task so put all the effort and knowledge you have to come up with the best translations.
+            - Use professional, natural Bulgarian language.
+            - Be consistent with the existing Bulgarian translations in lang/main-bg.json (terminology, formal/informal style, etc.). For example, if a specific word is used to translate "closed captions", continue using that same word for new translations as well. Maintain consistency in formal vs informal language, and anything else you can think of.
+            - Mixed Bulgarian and English is unacceptable. Everything must be translated to proper Bulgarian.
+            - Exception: Established technical terms that are widely used in English (like 'WebAssembly', 'URL', 'API') can remain in English if they don't have good Bulgarian translations and are commonly used by Bulgarian speakers.
+            - Example: 'phone number' MUST be translated to Bulgarian, but 'WebAssembly' can stay in English.
+            - Preserve any placeholders like {{variable}} or {name} exactly as they appear in the English version.
+            - Maintain formal/informal consistency with existing translations.
+            - The keys must be alphabetically ordered in the output file.
+            - Use 4-space indentation for the JSON file.
+
+            Please read both files, identify what needs to be translated, and update lang/main-bg.json accordingly.
+
+      - name: Check for translation changes
+        id: check_changes
+        run: |
+          if git diff --quiet lang/main-bg.json; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          BRANCH_NAME="auto-translate-bulgarian-$(date +%Y%m%d-%H%M%S)"
+
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          git checkout -b "$BRANCH_NAME"
+          git add lang/main-bg.json
+
+          ADDED=$(git diff --cached lang/main-bg.json | grep -c '^+[^+]' || echo "0")
+          REMOVED=$(git diff --cached lang/main-bg.json | grep -c '^-[^-]' || echo "0")
+
+          git commit -m "$(cat <<EOF
+          feat(i18n): auto-update Bulgarian translations
+
+          Automated Bulgarian translation update based on changes to main.json.
+          - Added/Updated: $ADDED line(s)
+          - Removed: $REMOVED line(s)
+          EOF
+          )"
+
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --title "feat(i18n): Auto-update Bulgarian translations" \
+            --body "$(cat <<'EOF'
+          ## Summary
+          - Automated Bulgarian translation update based on changes to main.json
+          - Translations generated using Claude AI for consistency and quality
+
+          ## Test plan
+          - [ ] Review translation quality and accuracy
+          - [ ] Verify proper JSON formatting and indentation
+          - [ ] Check that all new/modified keys from main.json are translated
+          - [ ] Ensure consistency with existing Bulgarian translations
+          EOF
+          )" \
+            --base master \
+            --head "$BRANCH_NAME"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
