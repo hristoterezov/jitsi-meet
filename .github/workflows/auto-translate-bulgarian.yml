@@ -1,10 +1,7 @@
 name: Auto-translate Bulgarian
 
 on:
-  push:
-    branches: [master, gh-action-auto-translate]
-    paths:
-      - 'lang/main.json'
+  workflow_dispatch:
 
 permissions:
   contents: write
